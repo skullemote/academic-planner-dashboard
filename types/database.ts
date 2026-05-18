@@ -26,6 +26,10 @@ export interface Task {
   updated_at: string;
 }
 
+export interface TaskWithCourse extends Task {
+  courses: Pick<Course, "id" | "course_code" | "title"> | null;
+}
+
 export interface DashboardStats {
   totalCourses: number;
   plannedCourses: number;

@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Course, Task, DashboardStats, ProgressSummary } from "@/types/database";
+import type { QueryData } from "@supabase/supabase-js";
+import type {
+  Course,
+  Task,
+  DashboardStats,
+  ProgressSummary,
+} from "@/types/database";
 
 function formatDueDate(value: string) {
   const date = new Date(value);
@@ -11,7 +17,10 @@ function formatDueDate(value: string) {
   }).format(date);
 }
 
-function buildStats(courses: Course[], tasks: Task[]): DashboardStats {
+function buildStats(
+  courses: Course[],
+  tasks: Pick<Task, "is_completed">[]
+): DashboardStats {
   return {
     totalCourses: courses.length,
     plannedCourses: courses.filter((course) => course.status === "Planned").length,
@@ -39,11 +48,33 @@ function buildProgress(courses: Course[]): ProgressSummary {
 export async function DashboardContent() {
   const supabase = await createClient();
 
+  const coursesQuery = supabase
+    .from("courses")
+    .select("*")
+    .order("course_code", { ascending: true });
+
+  const tasksQuery = supabase
+    .from("tasks")
+    .select(`
+      id,
+      course_id,
+      title,
+      due_date,
+      is_completed,
+      created_at,
+      updated_at,
+      courses (
+        id,
+        course_code,
+        title
+      )
+    `)
+    .order("due_date", { ascending: true });
+
+  type TasksWithCourses = QueryData<typeof tasksQuery>;
+
   const [{ data: coursesData, error: coursesError }, { data: tasksData, error: tasksError }] =
-    await Promise.all([
-      supabase.from("courses").select("*").order("course_code", { ascending: true }),
-      supabase.from("tasks").select("*").order("due_date", { ascending: true }),
-    ]);
+    await Promise.all([coursesQuery, tasksQuery]);
 
   if (coursesError) {
     throw new Error(`Failed to load courses: ${coursesError.message}`);
@@ -54,7 +85,7 @@ export async function DashboardContent() {
   }
 
   const courses = (coursesData ?? []) as Course[];
-  const tasks = (tasksData ?? []) as Task[];
+  const tasks: TasksWithCourses = tasksData ?? [];
 
   const stats = buildStats(courses, tasks);
   const progress = buildProgress(courses);
@@ -142,27 +173,35 @@ export async function DashboardContent() {
 
             <div className="mt-5 space-y-4">
               {upcomingTasks.length > 0 ? (
-                upcomingTasks.map((task) => (
-                  <div key={task.id} className="rounded-xl border border-border/60 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Course ID: {task.course_id}
-                        </p>
+                upcomingTasks.map((task) => {
+                  const relatedCourse = Array.isArray(task.courses)
+                    ? task.courses[0]
+                    : task.courses;
+
+                  return (
+                    <div key={task.id} className="rounded-xl border border-border/60 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h4 className="font-medium">{task.title}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {relatedCourse
+                              ? `${relatedCourse.course_code} · ${relatedCourse.title}`
+                              : "Unassigned course"}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                          Open
+                        </span>
                       </div>
-                      <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                        Open
-                      </span>
+                      <p className="mt-3 text-sm">
+                        Due:{" "}
+                        <span className="text-muted-foreground">
+                          {formatDueDate(task.due_date)}
+                        </span>
+                      </p>
                     </div>
-                    <p className="mt-3 text-sm">
-                      Due:{" "}
-                      <span className="text-muted-foreground">
-                        {formatDueDate(task.due_date)}
-                      </span>
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
                   No open tasks yet.

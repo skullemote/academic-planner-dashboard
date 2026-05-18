@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { QueryData } from "@supabase/supabase-js";
+import { AddCourseForm } from "@/components/dashboard/add-course-form";
 import type {
   Course,
   Task,
@@ -131,9 +132,7 @@ export async function DashboardContent() {
                 Courses currently marked as planned in your academic roadmap.
               </p>
             </div>
-            <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
-              Add course
-            </button>
+            <AddCourseForm />
           </div>
 
           <div className="space-y-4">

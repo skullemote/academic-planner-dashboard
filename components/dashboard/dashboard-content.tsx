@@ -1,22 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import type { QueryData } from "@supabase/supabase-js";
 import { AddCourseForm } from "@/components/dashboard/add-course-form";
+import { AddTaskForm } from "@/components/dashboard/add-task-form";
+import { TaskCard } from "@/components/dashboard/task-card";
 import type {
   Course,
   Task,
   DashboardStats,
   ProgressSummary,
 } from "@/types/database";
-
-function formatDueDate(value: string) {
-  const date = new Date(value);
-
-  return new Intl.DateTimeFormat("en-CA", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
 
 function buildStats(
   courses: Course[],
@@ -95,6 +87,12 @@ export async function DashboardContent() {
   const plannedCourses = courses.filter((course) => course.status === "Planned").slice(0, 5);
   const ideaBoardCourses = courses.filter((course) => course.status === "Idea Board").slice(0, 5);
 
+  const taskCourseOptions = courses.map((course) => ({
+    id: course.id,
+    course_code: course.course_code,
+    title: course.title,
+  }));
+
   return (
     <div className="flex-1 space-y-8 p-4 md:p-6">
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -165,42 +163,21 @@ export async function DashboardContent() {
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-            <h3 className="text-lg font-semibold">Upcoming tasks</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Due dates pulled directly from your task database.
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">Upcoming tasks</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Due dates pulled directly from your task database.
+                </p>
+              </div>
+              <AddTaskForm courses={taskCourseOptions} />
+            </div>
 
             <div className="mt-5 space-y-4">
               {upcomingTasks.length > 0 ? (
-                upcomingTasks.map((task) => {
-                  const relatedCourse = Array.isArray(task.courses)
-                    ? task.courses[0]
-                    : task.courses;
-
-                  return (
-                    <div key={task.id} className="rounded-xl border border-border/60 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h4 className="font-medium">{task.title}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {relatedCourse
-                              ? `${relatedCourse.course_code} · ${relatedCourse.title}`
-                              : "Unassigned course"}
-                          </p>
-                        </div>
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                          Open
-                        </span>
-                      </div>
-                      <p className="mt-3 text-sm">
-                        Due:{" "}
-                        <span className="text-muted-foreground">
-                          {formatDueDate(task.due_date)}
-                        </span>
-                      </p>
-                    </div>
-                  );
-                })
+                upcomingTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} />
+                ))
               ) : (
                 <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
                   No open tasks yet.

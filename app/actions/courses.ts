@@ -10,10 +10,10 @@ export async function createCourse(data: CourseFormValues) {
 
   const { error } = await supabase.from("courses").insert({
     ...parsed,
-    term: parsed.term || null,
-    description: parsed.description || null,
-    prerequisites: parsed.prerequisites || null,
-    user_notes: parsed.user_notes || null,
+    term: parsed.term || null, // term allows null in the schema
+    description: parsed.description || "", // description requires string
+    prerequisites: parsed.prerequisites || "", // prerequisites requires string
+    user_notes: parsed.user_notes || null, // user_notes allows null in the schema
   });
 
   if (error) throw new Error(error.message);
@@ -29,8 +29,8 @@ export async function updateCourse(id: string, data: CourseFormValues) {
     .update({
       ...parsed,
       term: parsed.term || null,
-      description: parsed.description || null,
-      prerequisites: parsed.prerequisites || null,
+      description: parsed.description || "",
+      prerequisites: parsed.prerequisites || "",
       user_notes: parsed.user_notes || null,
     })
     .eq("id", id);

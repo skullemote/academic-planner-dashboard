@@ -85,8 +85,10 @@ export async function DashboardContent() {
   const progress = buildProgress(courses);
 
   const upcomingTasks = tasks.filter((task) => !task.is_completed).slice(0, 5);
-  const plannedCourses = courses.filter((course) => course.status === "Planned").slice(0, 5);
-  const ideaBoardCourses = courses.filter((course) => course.status === "Idea Board").slice(0, 5);
+  // Show all planned courses on the dashboard
+  const plannedCourses = courses.filter((course) => course.status === "Planned");
+  // Show all idea board courses on the dashboard
+  const ideaBoardCourses = courses.filter((course) => course.status === "Idea Board");
 
   const taskCourseOptions = courses.map((course) => ({
     id: course.id,
@@ -131,13 +133,8 @@ export async function DashboardContent() {
                 Courses currently marked as planned in your academic roadmap.
               </p>
             </div>
-            <CourseDialog
-              trigger={
-                <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
-                  Add course
-                </button>
-              }
-            />
+            {/* The trigger button is now rendered safely inside the client component */}
+            <CourseDialog />
           </div>
 
           <div className="space-y-4">

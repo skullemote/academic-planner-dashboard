@@ -13,6 +13,7 @@ import {
 import { CourseDialog } from "@/components/dashboard/course-dialog";
 import { deleteCourse } from "@/app/actions/courses";
 import type { Course } from "@/types/database";
+import Link from "next/link";
 
 interface CourseCardProps {
   course: Course;
@@ -41,8 +42,10 @@ export function CourseCard({ course, variant = "default" }: CourseCardProps) {
         <div className={`group relative rounded-xl bg-muted p-4 transition-all ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-muted-foreground">{course.course_code}</p>
-              <p className="mt-1 font-semibold">{course.title}</p>
+              <Link href={`/courses/${course.id}`} className="hover:underline">
+                <p className="text-sm text-muted-foreground">{course.course_code}</p>
+            </Link>
+            <p className="mt-1 font-semibold">{course.title}</p>
             </div>
             
             <DropdownMenu>
@@ -82,8 +85,10 @@ export function CourseCard({ course, variant = "default" }: CourseCardProps) {
           <p className="text-sm font-medium text-muted-foreground">
             {course.term ?? "No term assigned"}
           </p>
-          <h4 className="mt-1 font-semibold">{course.course_code}</h4>
-          <p className="text-sm text-muted-foreground">{course.title}</p>
+          <Link href={`/courses/${course.id}`} className="hover:underline">
+            <h4 className="mt-1 font-semibold">{course.course_code}</h4>
+        </Link>
+        <p className="text-sm text-muted-foreground">{course.title}</p>
         </div>
 
         <div className="flex items-center gap-3">

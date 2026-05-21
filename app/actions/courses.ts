@@ -2,45 +2,48 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { courseSchema, type CourseFormValues } from "@/lib/validations";
 
-function normalizeOptional(value: FormDataEntryValue | null) {
-  if (!value) return null;
-  const trimmed = value.toString().trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-export async function createCourse(formData: FormData) {
+export async function createCourse(data: CourseFormValues) {
   const supabase = await createClient();
-
-  const course_code = formData.get("course_code")?.toString().trim() ?? "";
-  const title = formData.get("title")?.toString().trim() ?? "";
-  const credits = Number(formData.get("credits") ?? 3);
-  const faculty = formData.get("faculty")?.toString().trim() ?? "Other";
-  const description = formData.get("description")?.toString().trim() ?? "";
-  const prerequisites = formData.get("prerequisites")?.toString().trim() ?? "";
-  const status = formData.get("status")?.toString().trim() ?? "Planned";
-  const term = normalizeOptional(formData.get("term"));
-  const user_notes = normalizeOptional(formData.get("user_notes"));
-
-  if (!course_code || !title) {
-    throw new Error("Course code and title are required.");
-  }
+  const parsed = courseSchema.parse(data);
 
   const { error } = await supabase.from("courses").insert({
-    course_code,
-    title,
-    credits,
-    faculty,
-    description,
-    prerequisites,
-    status,
-    term,
-    user_notes,
+    ...parsed,
+    term: parsed.term || null,
+    description: parsed.description || null,
+    prerequisites: parsed.prerequisites || null,
+    user_notes: parsed.user_notes || null,
   });
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}
 
+export async function updateCourse(id: string, data: CourseFormValues) {
+  const supabase = await createClient();
+  const parsed = courseSchema.parse(data);
+
+  const { error } = await supabase
+    .from("courses")
+    .update({
+      ...parsed,
+      term: parsed.term || null,
+      description: parsed.description || null,
+      prerequisites: parsed.prerequisites || null,
+      user_notes: parsed.user_notes || null,
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}
+
+export async function deleteCourse(id: string) {
+  const supabase = await createClient();
+  
+  const { error } = await supabase.from("courses").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  
   revalidatePath("/");
 }

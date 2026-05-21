@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { QueryData } from "@supabase/supabase-js";
-import { AddCourseForm } from "@/components/dashboard/add-course-form";
+import { CourseDialog } from "@/components/dashboard/course-dialog";
+import { CourseCard } from "@/components/dashboard/course-card";
 import { AddTaskForm } from "@/components/dashboard/add-task-form";
 import { TaskCard } from "@/components/dashboard/task-card";
 import type {
@@ -130,28 +131,19 @@ export async function DashboardContent() {
                 Courses currently marked as planned in your academic roadmap.
               </p>
             </div>
-            <AddCourseForm />
+            <CourseDialog
+              trigger={
+                <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
+                  Add course
+                </button>
+              }
+            />
           </div>
 
           <div className="space-y-4">
             {plannedCourses.length > 0 ? (
               plannedCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className="flex flex-col gap-3 rounded-xl border border-border/60 p-4 md:flex-row md:items-center md:justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {course.term ?? "No term assigned"}
-                    </p>
-                    <h4 className="mt-1 font-semibold">{course.course_code}</h4>
-                    <p className="text-sm text-muted-foreground">{course.title}</p>
-                  </div>
-
-                  <span className="inline-flex w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                    {course.faculty}
-                  </span>
-                </div>
+                <CourseCard key={course.id} course={course} />
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
@@ -195,15 +187,7 @@ export async function DashboardContent() {
             <div className="mt-5 space-y-3">
               {ideaBoardCourses.length > 0 ? (
                 ideaBoardCourses.map((course) => (
-                  <div key={course.id} className="rounded-xl bg-muted p-4">
-                    <p className="text-sm text-muted-foreground">{course.course_code}</p>
-                    <p className="mt-1 font-semibold">{course.title}</p>
-                    {course.prerequisites ? (
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Prerequisites: {course.prerequisites}
-                      </p>
-                    ) : null}
-                  </div>
+                  <CourseCard key={course.id} course={course} variant="compact" />
                 ))
               ) : (
                 <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">

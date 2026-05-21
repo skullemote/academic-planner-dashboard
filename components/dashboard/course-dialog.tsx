@@ -20,12 +20,10 @@ export function CourseDialog({
   course,
   open,
   onOpenChange,
-  trigger,
 }: {
   course?: Course;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined && onOpenChange !== undefined;
@@ -86,7 +84,13 @@ export function CourseDialog({
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
+            Add course
+          </button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -99,7 +103,7 @@ export function CourseDialog({
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 pt-2">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Course code</label>
+              <label className="text-sm font-medium">Course code <span className="text-red-500">*</span></label>
               <input
                 {...form.register("course_code")}
                 placeholder="PSYCH 212"
@@ -112,7 +116,7 @@ export function CourseDialog({
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Title</label>
+              <label className="text-sm font-medium">Title <span className="text-red-500">*</span></label>
               <input
                 {...form.register("title")}
                 placeholder="Intro to Research Methods"
@@ -127,7 +131,7 @@ export function CourseDialog({
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Credits</label>
+              <label className="text-sm font-medium">Credits <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 {...form.register("credits", { valueAsNumber: true })}
@@ -140,7 +144,7 @@ export function CourseDialog({
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Faculty</label>
+              <label className="text-sm font-medium">Faculty <span className="text-red-500">*</span></label>
               <select
                 {...form.register("faculty")}
                 disabled={isPending}
@@ -153,7 +157,7 @@ export function CourseDialog({
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">Status <span className="text-red-500">*</span></label>
               <select
                 {...form.register("status")}
                 disabled={isPending}
@@ -167,7 +171,9 @@ export function CourseDialog({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Term</label>
+            <label className="text-sm font-medium flex justify-between">
+              Term <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
             <input
               {...form.register("term")}
               placeholder="Fall 2026"
@@ -177,19 +183,38 @@ export function CourseDialog({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Description</label>
+            <label className="text-sm font-medium flex justify-between">
+              Description <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
             <textarea
               {...form.register("description")}
               rows={3}
+              placeholder="Optional course description"
               disabled={isPending}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Prerequisites</label>
+            <label className="text-sm font-medium flex justify-between">
+              Prerequisites <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
             <input
               {...form.register("prerequisites")}
+              placeholder="PSYCH 258 or 275"
+              disabled={isPending}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <label className="text-sm font-medium flex justify-between">
+              User notes <span className="text-muted-foreground font-normal">(Optional)</span>
+            </label>
+            <textarea
+              {...form.register("user_notes")}
+              rows={2}
+              placeholder="Private notes for yourself"
               disabled={isPending}
               className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
             />

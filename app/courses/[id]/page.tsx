@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, FileText, CheckSquare, AlignLeft } from "lucide-react";
@@ -6,12 +7,10 @@ import { CourseDialog } from "@/components/dashboard/course-dialog";
 import { TaskCard } from "@/components/dashboard/task-card";
 import { AddTaskForm } from "@/components/dashboard/add-task-form";
 
-export default async function CoursePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params; // Next.js 15+ handles params as a Promise
+// We extract the data fetching into this component so we can wrap it in Suspense.
+// It receives the params promise and awaits it inside the boundary.
+async function CourseDetails({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
+  const { id } = await paramsPromise;
   const supabase = await createClient();
 
   // Fetch the course details
@@ -94,14 +93,7 @@ export default async function CoursePage({
         </div>
 
         {/* Reuse our Course Dialog to allow editing right from this page */}
-        <CourseDialog
-          course={course}
-          trigger={
-            <button className="rounded-lg border border-border/60 px-4 py-2 text-sm font-medium transition hover:bg-accent">
-              Edit course
-            </button>
-          }
-        />
+        <CourseDialog course={course} triggerLabel="Edit course" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-[1fr_400px]">
@@ -160,5 +152,19 @@ export default async function CoursePage({
         </div>
       </div>
     </div>
+  );
+}
+
+// The main exported page wraps the data fetcher in Suspense to satisfy Next.js!
+export default function CoursePageWrapper({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // Notice we don't await params here anymore. We pass the raw promise down.
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading course details...</div>}>
+      <CourseDetails paramsPromise={params} />
+    </Suspense>
   );
 }

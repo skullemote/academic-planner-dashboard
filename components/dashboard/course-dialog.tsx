@@ -20,12 +20,12 @@ export function CourseDialog({
   course,
   open,
   onOpenChange,
-  trigger, // <-- 1. Add trigger here
+  triggerLabel, // <-- Use triggerLabel instead of passing a whole button element
 }: {
   course?: Course;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode; // <-- 2. Add trigger type here
+  triggerLabel?: string;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined && onOpenChange !== undefined;
@@ -86,19 +86,16 @@ export function CourseDialog({
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      {/* 3. Update this section to use the custom trigger if provided */}
       {!isControlled && (
         <DialogTrigger asChild>
-          {trigger || (
-            <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
-              Add course
-            </button>
-          )}
+          {/* Render the button purely on the client side using the label */}
+          <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
+            {triggerLabel || "Add course"}
+          </button>
         </DialogTrigger>
       )}
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-      {/* ... the rest of the form stays exactly the same ... */}
         <DialogHeader>
           <DialogTitle>{course ? "Edit course" : "Add course"}</DialogTitle>
           <DialogDescription>

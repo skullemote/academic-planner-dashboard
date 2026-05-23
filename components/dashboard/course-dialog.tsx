@@ -20,10 +20,12 @@ export function CourseDialog({
   course,
   open,
   onOpenChange,
+  triggerLabel, // <-- Use triggerLabel instead of passing a whole button element
 }: {
   course?: Course;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  triggerLabel?: string;
 }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined && onOpenChange !== undefined;
@@ -86,8 +88,9 @@ export function CourseDialog({
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
+          {/* Render the button purely on the client side using the label */}
           <button className="rounded-lg border border-border/60 px-3 py-2 text-sm transition hover:bg-accent">
-            Add course
+            {triggerLabel || "Add course"}
           </button>
         </DialogTrigger>
       )}

@@ -60,3 +60,32 @@ export async function deleteTask(taskId: string) {
 
   revalidatePath("/");
 }
+
+export async function updateTask(taskId: string, formData: FormData) {
+  const supabase = await createClient();
+
+  const title = formData.get("title")?.toString().trim() ?? "";
+  const course_id = formData.get("course_id")?.toString().trim() ?? "";
+  const due_date = normalizeOptional(formData.get("due_date"));
+
+  if (!title || !course_id) {
+    throw new Error("Task title and course are required.");
+  }
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      title,
+      course_id,
+      due_date,
+    })
+    .eq("id", taskId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/");
+  // Also revalidate the specific course page in case the user is on it
+  revalidatePath(`/courses/${course_id}`);
+}

@@ -1,50 +1,56 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft, FileText, CheckSquare, AlignLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CourseDialog } from "@/components/dashboard/course-dialog";
 import { TaskCard } from "@/components/dashboard/task-card";
 import { AddTaskForm } from "@/components/dashboard/add-task-form";
+import Link from "next/link";
+import { ChevronLeft, Calendar, GraduationCap } from "lucide-react";
 
-// We extract the data fetching into this component so we can wrap it in Suspense.
-// It receives the params promise and awaits it inside the boundary.
-async function CourseDetails({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
-  const { id } = await paramsPromise;
+export default async function CourseDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = await params;
+  const courseId = resolvedParams.id;
   const supabase = await createClient();
 
-  // Fetch the course details
-  const { data: course } = await supabase
+  const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("*")
-    .eq("id", id)
+    .eq("id", courseId)
     .single();
 
-  if (!course) {
+  if (courseError || !course) {
     notFound();
   }
 
-  // Fetch only the tasks for this course
-  const { data: tasksData } = await supabase
+  const { data: tasks, error: tasksError } = await supabase
     .from("tasks")
     .select(`
       id,
       title,
       due_date,
       is_completed,
+      course_id,
       courses (
         course_code,
         title
       )
     `)
-    .eq("course_id", id)
-    .order("is_completed", { ascending: true }) // Open tasks first
+    .eq("course_id", courseId)
     .order("due_date", { ascending: true });
 
-  const tasks = tasksData || [];
-  
-  // Format the course for the AddTaskForm
-  const taskCourseOptions = [
+  if (tasksError) {
+    throw new Error(`Failed to load tasks: ${tasksError.message}`);
+  }
+
+  const completedTasks = tasks.filter((t) => t.is_completed).length;
+  const totalTasks = tasks.length;
+  const progressPercentage =
+    totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+  const singleCourseOption = [
     {
       id: course.id,
       course_code: course.course_code,
@@ -53,118 +59,103 @@ async function CourseDetails({ paramsPromise }: { paramsPromise: Promise<{ id: s
   ];
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-6 lg:max-w-6xl mx-auto w-full">
-      {/* Back Button */}
+    <div className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full space-y-8">
       <Link
         href="/"
-        className="inline-flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ChevronLeft className="mr-1 h-4 w-4" />
         Back to Dashboard
       </Link>
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              {course.faculty}
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-medium">
+              {course.course_code}
             </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              {course.term || "No term set"}
+            <span className="bg-muted px-2.5 py-0.5 rounded-full text-xs font-medium text-muted-foreground">
+              {course.credits} Credits
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">{course.course_code}</h1>
-          <p className="mt-1 text-lg text-muted-foreground">{course.title}</p>
-          
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-foreground">Status:</span> {course.status}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-foreground">Credits:</span> {course.credits}
-            </div>
-            {course.prerequisites && (
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium text-foreground">Prereqs:</span> {course.prerequisites}
-              </div>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight">{course.title}</h1>
         </div>
-
-        {/* Reuse our Course Dialog to allow editing right from this page */}
-        <CourseDialog course={course} triggerLabel="Edit course" />
+        <CourseDialog course={course} />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1fr_400px]">
-        {/* Left Column: Notes & Details */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <AlignLeft className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Course Description</h2>
-            </div>
-            {course.description ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                {course.description}
-              </p>
-            ) : (
-              <p className="text-sm italic text-muted-foreground/60">No description provided.</p>
-            )}
+      <section className="grid sm:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm flex items-center gap-4">
+          <div className="bg-primary/10 p-3 rounded-lg text-primary">
+            <GraduationCap className="h-6 w-6" />
           </div>
-
-          <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">My Notes</h2>
-            </div>
-            {course.user_notes ? (
-              <div className="rounded-xl bg-muted p-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {course.user_notes}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm italic text-muted-foreground/60">No notes added.</p>
-            )}
+          <div>
+            <p className="text-sm text-muted-foreground">Status</p>
+            <p className="font-semibold">{course.status}</p>
+          </div>
+        </div>
+        
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm flex items-center gap-4">
+          <div className="bg-primary/10 p-3 rounded-lg text-primary">
+            <Calendar className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Semester</p>
+            <p className="font-semibold">
+              {course.semester ? course.semester : "Unscheduled"}
+            </p>
           </div>
         </div>
 
-        {/* Right Column: Tasks */}
-        <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm h-fit">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Tasks</h2>
-            </div>
-            <AddTaskForm courses={taskCourseOptions} />
+        <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-sm text-muted-foreground">Task Progress</p>
+            <span className="text-sm font-medium">{progressPercentage}%</span>
           </div>
-
-          <div className="space-y-4">
-            {tasks.length > 0 ? (
-              tasks.map((task) => <TaskCard key={task.id} task={task as any} />)
-            ) : (
-              <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
-                No tasks assigned to this course.
-              </div>
-            )}
+          <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
+            <div
+              className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-in-out"
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {course.description && (
+        <section className="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+          <h3 className="font-semibold mb-2">Description</h3>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {course.description}
+          </p>
+        </section>
+      )}
+
+      <section className="rounded-xl border border-border/60 bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold">Course Tasks</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage assignments and reading for this class.
+            </p>
+          </div>
+          <AddTaskForm courses={singleCourseOption} />
+        </div>
+
+        <div className="space-y-4">
+          {tasks.length > 0 ? (
+            tasks.map((task) => (
+              <TaskCard 
+                key={task.id} 
+                task={task as any} 
+                courses={singleCourseOption} 
+              />
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
+              No tasks added for this course yet.
+            </div>
+          )}
+        </div>
+      </section>
     </div>
-  );
-}
-
-// The main exported page wraps the data fetcher in Suspense to satisfy Next.js!
-export default function CoursePageWrapper({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  // Notice we don't await params here anymore. We pass the raw promise down.
-  return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading course details...</div>}>
-      <CourseDetails paramsPromise={params} />
-    </Suspense>
   );
 }

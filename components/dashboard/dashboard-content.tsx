@@ -160,12 +160,17 @@ export async function DashboardContent() {
                 </p>
               </div>
               <AddTaskForm courses={taskCourseOptions} />
-            </div>
+           </div> 
+        </div>
 
             <div className="mt-5 space-y-4">
               {upcomingTasks.length > 0 ? (
                 upcomingTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} />
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    courses={taskCourseOptions} 
+                  />
                 ))
               ) : (
                 <div className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
@@ -173,7 +178,6 @@ export async function DashboardContent() {
                 </div>
               )}
             </div>
-          </div>
 
           <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Idea board</h3>
